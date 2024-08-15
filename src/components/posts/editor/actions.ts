@@ -1,20 +1,20 @@
-"use server"
+"use server";
 
-import { validateRequest } from "@/auth"
+import { validateRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { createPostSchema } from "@/lib/validation";
 
 export async function submitPost(input: string) {
-    const { user } = await validateRequest();
+  const { user } = await validateRequest();
 
-    if(!user) throw Error("Unauthorized")
+  if (!user) throw new Error("Unauthorized");
 
-    const { content } = createPostSchema.parse({ content: input })
+  const { content } = createPostSchema.parse({ content: input });
 
-    await prisma.post.create({
-        data: {
-            content,
-            userId: user.id,
-        },
-    });
+  await prisma.post.create({
+    data: {
+      content,
+      userId: user.id,
+    },
+  });
 }
