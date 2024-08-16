@@ -45,3 +45,6 @@ export default function RootLayout({
     </html>
   );
 }
+
+// 5:22:30 / 7:37:10  React Query cache mutation (useMutation, setQueriesData vs invalidateQueries)
+
