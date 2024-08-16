@@ -1,21 +1,18 @@
 "use client";
 
 import { useSession } from "@/app/(main)/SessionProvider";
-import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
 import UserAvatar from "@/components/UserAvatar";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { submitPost } from "./actions";
+import { useSubmitPostMutation } from "./mutations";
 import "./styles.css";
-import { useSubmitPostMutations } from "./mutations";
-import LoadingButton from "@/components/LoadingButton";
 
 export default function PostEditor() {
-
   const { user } = useSession();
 
-  const mutation = useSubmitPostMutations();
+  const mutation = useSubmitPostMutation();
 
   const editor = useEditor({
     extensions: [
@@ -38,7 +35,7 @@ export default function PostEditor() {
   function onSubmit() {
     mutation.mutate(input, {
       onSuccess: () => {
-        editor?.commands.clearContent();  
+        editor?.commands.clearContent();
       },
     });
   }
