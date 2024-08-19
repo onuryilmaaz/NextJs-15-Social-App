@@ -10,10 +10,11 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ImageIcon, Loader2, X } from "lucide-react";
 import Image from "next/image";
-import { useRef } from "react";
+import { ClipboardEvent, useRef } from "react";
 import { useSubmitPostMutation } from "./mutations";
 import "./styles.css";
 import useMediaUpload, { Attachment } from "./useMediaUpload";
+import { useDropzone } from "@uploadthing/react";
 
 export default function PostEditor() {
   const { user } = useSession();
@@ -29,6 +30,12 @@ export default function PostEditor() {
     reset: resetMediaUploads,
   } = useMediaUpload();
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: startUpload
+  })
+
+  const { onClick, ...rootProps } = getRootProps();
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -39,6 +46,7 @@ export default function PostEditor() {
         placeholder: "What's crack-a-lackin'?",
       }),
     ],
+    immediatelyRender: false,
   });
 
   const input =
@@ -61,14 +69,25 @@ export default function PostEditor() {
     );
   }
 
+  function onPaste(e: ClipboardEvent<HTMLInputElement>) {
+    const files = Array.from(e.clipboardData.items)
+      .filter(item => item.kind === "file")
+      .map(item => item.getAsFile()) as File[];
+    startUpload(files);
+  }
+
   return (
     <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 shadow-sm">
       <div className="flex gap-5">
         <UserAvatar avatarUrl={user.avatarUrl} className="hidden sm:inline" />
-        <EditorContent
-          editor={editor}
-          className="max-h-[20rem] w-full overflow-y-auto rounded-2xl bg-background px-5 py-3"
-        />
+        <div {...rootProps} className="w-full">
+          <EditorContent
+            editor={editor}
+            className={cn("max-h-[20rem] w-full overflow-y-auto rounded-2xl bg-background px-5 py-3", isDragActive && "outline-dashed")}
+            onPaste={onPaste}
+          />
+          <input {...getInputProps()}  />
+        </div>
       </div>
       {!!attachments.length && (
         <AttachmentPreviews
