@@ -1,8 +1,8 @@
 {
-    "crons": [
-      {
-        "path": "/api/clear-uploads",
-        "schedule": "0 2 * * *"
-      }
-    ]
-  } 
+  "crons": [
+    {
+      "path": "/api/clear-uploads",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

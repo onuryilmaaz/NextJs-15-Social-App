@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { useDropzone } from "@uploadthing/react";
 import { ImageIcon, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { ClipboardEvent, useRef } from "react";
 import { useSubmitPostMutation } from "./mutations";
 import "./styles.css";
 import useMediaUpload, { Attachment } from "./useMediaUpload";
-import { useDropzone } from "@uploadthing/react";
 
 export default function PostEditor() {
   const { user } = useSession();
@@ -31,8 +31,8 @@ export default function PostEditor() {
   } = useMediaUpload();
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: startUpload
-  })
+    onDrop: startUpload,
+  });
 
   const { onClick, ...rootProps } = getRootProps();
 
@@ -71,8 +71,8 @@ export default function PostEditor() {
 
   function onPaste(e: ClipboardEvent<HTMLInputElement>) {
     const files = Array.from(e.clipboardData.items)
-      .filter(item => item.kind === "file")
-      .map(item => item.getAsFile()) as File[];
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile()) as File[];
     startUpload(files);
   }
 
@@ -83,10 +83,13 @@ export default function PostEditor() {
         <div {...rootProps} className="w-full">
           <EditorContent
             editor={editor}
-            className={cn("max-h-[20rem] w-full overflow-y-auto rounded-2xl bg-background px-5 py-3", isDragActive && "outline-dashed")}
+            className={cn(
+              "max-h-[20rem] w-full overflow-y-auto rounded-2xl bg-background px-5 py-3",
+              isDragActive && "outline-dashed",
+            )}
             onPaste={onPaste}
           />
-          <input {...getInputProps()}  />
+          <input {...getInputProps()} />
         </div>
       </div>
       {!!attachments.length && (
