@@ -46,7 +46,6 @@ export default function PostEditor() {
         placeholder: "What's crack-a-lackin'?",
       }),
     ],
-    immediatelyRender: false,
   });
 
   const input =
