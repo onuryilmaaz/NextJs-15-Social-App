@@ -23,8 +23,9 @@ export default function Page() {
         </div>
         <Image
           src={loginImage}
-          alt=""
+          alt="Login background"
           className="hidden w-1/2 object-cover md:block"
+          priority
         />
       </div>
     </main>

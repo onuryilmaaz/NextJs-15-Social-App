@@ -29,12 +29,15 @@ export async function GET(req: Request) {
       },
     });
 
-    new UTApi().deleteFiles(
-      unusedMedia.map(
-        (m) =>
-          m.url.split(`/a/${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}/`)[1],
-      ),
-    );
+    // Extract file keys from URLs for v7 format
+    const fileKeys = unusedMedia.map((media) => {
+      const urlParts = media.url.split("/");
+      return urlParts[urlParts.length - 1];
+    });
+
+    if (fileKeys.length > 0) {
+      new UTApi().deleteFiles(fileKeys);
+    }
 
     await prisma.media.deleteMany({
       where: {
