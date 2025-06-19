@@ -1,6 +1,7 @@
 import { useSession } from "@/app/(main)/SessionProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { PostsPage } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import {
   InfiniteData,
   QueryFilters,
@@ -67,7 +68,7 @@ export function useSubmitPostMutation() {
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Failed to post. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });

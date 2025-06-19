@@ -1,5 +1,6 @@
 import kyInstance from "@/lib/ky";
 import { LikeInfo } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import {
   QueryKey,
@@ -53,7 +54,7 @@ export default function LikeButton({ postId, initialState }: LikeButtonProps) {
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Something went wrong. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });

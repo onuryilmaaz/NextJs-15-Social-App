@@ -3,10 +3,11 @@
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import Post from "@/components/posts/Post";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { PostsPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 
 interface UserPostsProps {
   userId: string;
@@ -41,9 +42,15 @@ export default function UserPosts({ userId }: UserPostsProps) {
 
   if (status === "success" && !posts.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        This user hasn&apos;t posted anything yet.
-      </p>
+      <EmptyState
+        icon={<MessageSquare className="size-16" />}
+        title="No Posts Yet"
+        description="This user hasn't shared anything yet. Check back later for new content!"
+        action={{
+          label: "Explore Other Users",
+          href: "/",
+        }}
+      />
     );
   }
 

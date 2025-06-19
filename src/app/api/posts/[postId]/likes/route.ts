@@ -1,6 +1,12 @@
 import { validateRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { LikeInfo } from "@/lib/types";
+import { handleApiError, createError } from "@/lib/errors";
+import {
+  createNotification,
+  deleteRelatedNotifications,
+} from "@/lib/notifications";
+import { NotificationType } from "@prisma/client";
 
 export async function GET(
   req: Request,
@@ -10,7 +16,7 @@ export async function GET(
     const { user: loggedInUser } = await validateRequest();
 
     if (!loggedInUser) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      throw createError.authentication();
     }
 
     const post = await prisma.post.findUnique({
@@ -33,7 +39,7 @@ export async function GET(
     });
 
     if (!post) {
-      return Response.json({ error: "Post not found" }, { status: 404 });
+      throw createError.notFound("Post");
     }
 
     const data: LikeInfo = {
@@ -43,8 +49,7 @@ export async function GET(
 
     return Response.json(data);
   } catch (error) {
-    console.error(error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -56,7 +61,7 @@ export async function POST(
     const { user: loggedInUser } = await validateRequest();
 
     if (!loggedInUser) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      throw createError.authentication();
     }
 
     const post = await prisma.post.findUnique({
@@ -67,41 +72,36 @@ export async function POST(
     });
 
     if (!post) {
-      return Response.json({ error: "Post not found" }, { status: 404 });
+      throw createError.notFound("Post");
     }
 
-    await prisma.$transaction([
-      prisma.like.upsert({
-        where: {
-          userId_postId: {
-            userId: loggedInUser.id,
-            postId,
-          },
-        },
-        create: {
+    await prisma.like.upsert({
+      where: {
+        userId_postId: {
           userId: loggedInUser.id,
           postId,
         },
-        update: {},
-      }),
-      ...(loggedInUser.id !== post.userId
-        ? [
-            prisma.notification.create({
-              data: {
-                issuerId: loggedInUser.id,
-                recipientId: post.userId,
-                postId,
-                type: "LIKE",
-              },
-            }),
-          ]
-        : []),
-    ]);
+      },
+      create: {
+        userId: loggedInUser.id,
+        postId,
+      },
+      update: {},
+    });
+
+    // Send notification using the new notification service
+    if (loggedInUser.id !== post.userId) {
+      await createNotification({
+        type: NotificationType.LIKE,
+        recipientId: post.userId,
+        issuerId: loggedInUser.id,
+        postId,
+      });
+    }
 
     return new Response();
   } catch (error) {
-    console.error(error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -113,7 +113,7 @@ export async function DELETE(
     const { user: loggedInUser } = await validateRequest();
 
     if (!loggedInUser) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      throw createError.authentication();
     }
 
     const post = await prisma.post.findUnique({
@@ -124,29 +124,26 @@ export async function DELETE(
     });
 
     if (!post) {
-      return Response.json({ error: "Post not found" }, { status: 404 });
+      throw createError.notFound("Post");
     }
 
-    await prisma.$transaction([
-      prisma.like.deleteMany({
-        where: {
-          userId: loggedInUser.id,
-          postId,
-        },
-      }),
-      prisma.notification.deleteMany({
-        where: {
-          issuerId: loggedInUser.id,
-          recipientId: post.userId,
-          postId,
-          type: "LIKE",
-        },
-      }),
-    ]);
+    await prisma.like.deleteMany({
+      where: {
+        userId: loggedInUser.id,
+        postId,
+      },
+    });
+
+    // Delete related notifications using the new notification service
+    await deleteRelatedNotifications({
+      type: NotificationType.LIKE,
+      recipientId: post.userId,
+      issuerId: loggedInUser.id,
+      postId,
+    });
 
     return new Response();
   } catch (error) {
-    console.error(error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return handleApiError(error);
   }
 }

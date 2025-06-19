@@ -4,6 +4,7 @@ import { lucia } from "@/auth";
 import prisma from "@/lib/prisma";
 import streamServerClient from "@/lib/stream";
 import { signUpSchema, SignUpValues } from "@/lib/validation";
+import { createError, ErrorType } from "@/lib/errors";
 import { hash } from "@node-rs/argon2";
 import { generateIdFromEntropySize } from "lucia";
 import { isRedirectError } from "next/dist/client/components/redirect";
@@ -12,7 +13,7 @@ import { redirect } from "next/navigation";
 
 export async function signUp(
   credentials: SignUpValues,
-): Promise<{ error: string }> {
+): Promise<{ error: string; type?: ErrorType; field?: string }> {
   try {
     const { username, email, password } = signUpSchema.parse(credentials);
 
@@ -36,7 +37,9 @@ export async function signUp(
 
     if (existingUsername) {
       return {
-        error: "Username already taken",
+        error: "This username is already taken. Please choose a different one.",
+        type: ErrorType.CONFLICT_ERROR,
+        field: "username",
       };
     }
 
@@ -51,7 +54,10 @@ export async function signUp(
 
     if (existingEmail) {
       return {
-        error: "Email already taken",
+        error:
+          "An account with this email already exists. Try signing in instead.",
+        type: ErrorType.CONFLICT_ERROR,
+        field: "email",
       };
     }
 
@@ -84,8 +90,32 @@ export async function signUp(
   } catch (error) {
     if (isRedirectError(error)) throw error;
     console.error(error);
+
+    // Handle validation errors specifically
+    if (error && typeof error === "object" && "issues" in error) {
+      const zodError = error as any;
+      const firstIssue = zodError.issues?.[0];
+      return {
+        error: firstIssue?.message || "Please check your input and try again.",
+        type: ErrorType.VALIDATION_ERROR,
+        field: firstIssue?.path?.join("."),
+      };
+    }
+
+    // Handle Stream service errors
+    if (error && typeof error === "object" && "message" in error) {
+      const errorMessage = (error as any).message;
+      if (errorMessage.includes("stream") || errorMessage.includes("chat")) {
+        return {
+          error: "Unable to set up your account. Please try again.",
+          type: ErrorType.NETWORK_ERROR,
+        };
+      }
+    }
+
     return {
-      error: "Something went wrong. Please try again.",
+      error: "Unable to create account at this time. Please try again later.",
+      type: ErrorType.UNKNOWN_ERROR,
     };
   }
 }

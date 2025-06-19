@@ -2,14 +2,16 @@
 
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { NotificationsPage } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bell } from "lucide-react";
 import { useEffect } from "react";
 import Notification from "./Notification";
 
@@ -60,17 +62,26 @@ export default function Notifications() {
 
   if (status === "success" && !notifications.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        You don&apos;t have any notifications yet.
-      </p>
+      <EmptyState
+        icon={<Bell className="size-16" />}
+        title="No Notifications Yet"
+        description="When people like your posts, follow you, or comment on your content, you'll see those notifications here. Start engaging with the community!"
+        action={{
+          label: "Start Exploring",
+          href: "/",
+        }}
+      />
     );
   }
 
   if (status === "error") {
     return (
-      <p className="text-center text-destructive">
-        An error occurred while loading notifications.
-      </p>
+      <div className="space-y-2 text-center text-destructive">
+        <p>Unable to load notifications</p>
+        <p className="text-sm text-muted-foreground">
+          Please check your connection and try refreshing the page
+        </p>
+      </div>
     );
   }
 

@@ -4,7 +4,15 @@ import { logout } from "@/app/(auth)/actions";
 import { useSession } from "@/app/(main)/SessionProvider";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, LogOutIcon, Monitor, Moon, Sun, UserIcon } from "lucide-react";
+import {
+  Check,
+  LogOutIcon,
+  Monitor,
+  Moon,
+  Sun,
+  UserIcon,
+  Settings,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import {
@@ -46,6 +54,12 @@ export default function UserButton({ className }: UserButtonProps) {
           <DropdownMenuItem>
             <UserIcon className="mr-2 size-4" />
             Profile
+          </DropdownMenuItem>
+        </Link>
+        <Link href="/settings/blocked-users">
+          <DropdownMenuItem>
+            <Settings className="mr-2 size-4" />
+            Settings
           </DropdownMenuItem>
         </Link>
         <DropdownMenuSub>

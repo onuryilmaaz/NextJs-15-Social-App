@@ -3,10 +3,11 @@
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import Post from "@/components/posts/Post";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { PostsPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bookmark } from "lucide-react";
 
 export default function Bookmarks() {
   const {
@@ -37,9 +38,15 @@ export default function Bookmarks() {
 
   if (status === "success" && !posts.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        You don&apos;t have any bookmarks yet.
-      </p>
+      <EmptyState
+        icon={<Bookmark className="size-16" />}
+        title="No Bookmarks Yet"
+        description="Save interesting posts to read later! When you bookmark a post, it will appear here for easy access."
+        action={{
+          label: "Explore Posts",
+          href: "/",
+        }}
+      />
     );
   }
 

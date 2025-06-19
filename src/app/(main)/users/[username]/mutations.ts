@@ -1,5 +1,6 @@
 import { useToast } from "@/components/ui/use-toast";
 import { PostsPage } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import { useUploadThing } from "@/lib/uploadthing";
 import { UpdateUserProfileValues } from "@/lib/validation";
 import {
@@ -78,7 +79,7 @@ export function useUpdateProfileMutation() {
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Failed to update profile. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });

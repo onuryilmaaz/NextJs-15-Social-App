@@ -10,12 +10,17 @@ import { formatNumber } from "@/lib/utils";
 import { formatDate } from "date-fns";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { cache } from "react";
 import EditProfileButton from "./EditProfileButton";
 import UserPosts from "./UserPosts";
+import UserProfileTabs from "./UserProfileTabs";
+import UserActionsMenu from "@/components/UserActionsMenu";
+import ProfileViewTracker from "./ProfileViewTracker";
 
 interface PageProps {
   params: { username: string };
+  searchParams: { tab?: string };
 }
 
 const getUser = cache(async (username: string, loggedInUserId: string) => {
@@ -48,7 +53,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({ params: { username } }: PageProps) {
+export default async function Page({
+  params: { username },
+  searchParams: { tab = "posts" },
+}: PageProps) {
   const { user: loggedInUser } = await validateRequest();
 
   if (!loggedInUser) {
@@ -63,14 +71,14 @@ export default async function Page({ params: { username } }: PageProps) {
 
   return (
     <main className="flex w-full min-w-0 gap-5">
+      <ProfileViewTracker profileUserId={user.id} />
       <div className="w-full min-w-0 space-y-5">
         <UserProfile user={user} loggedInUserId={loggedInUser.id} />
-        <div className="rounded-2xl bg-card p-5 shadow-sm">
-          <h2 className="text-center text-2xl font-bold">
-            {user.displayName}&apos;s posts
-          </h2>
-        </div>
-        <UserPosts userId={user.id} />
+        <UserProfileTabs
+          user={user}
+          currentTab={tab}
+          loggedInUserId={loggedInUser.id}
+        />
       </div>
       <TrendsSidebar />
     </main>
@@ -111,14 +119,47 @@ async function UserProfile({ user, loggedInUserId }: UserProfileProps) {
                 {formatNumber(user._count.posts)}
               </span>
             </span>
-            <FollowerCount userId={user.id} initialState={followerInfo} />
+            <Link
+              href={`/users/${user.username}/followers`}
+              className="hover:underline"
+            >
+              <span>
+                Followers:{" "}
+                <span className="font-semibold">
+                  {formatNumber(user._count.followers)}
+                </span>
+              </span>
+            </Link>
+            <Link
+              href={`/users/${user.username}/following`}
+              className="hover:underline"
+            >
+              <span>
+                Following:{" "}
+                <span className="font-semibold">
+                  {formatNumber(user._count.following || 0)}
+                </span>
+              </span>
+            </Link>
           </div>
         </div>
-        {user.id === loggedInUserId ? (
-          <EditProfileButton user={user} />
-        ) : (
-          <FollowButton userId={user.id} initialState={followerInfo} />
-        )}
+        <div className="flex items-center gap-2">
+          {user.id === loggedInUserId ? (
+            <EditProfileButton user={user} />
+          ) : (
+            <>
+              <FollowButton userId={user.id} initialState={followerInfo} />
+              <UserActionsMenu
+                user={{
+                  id: user.id,
+                  username: user.username,
+                  displayName: user.displayName,
+                  avatarUrl: user.avatarUrl,
+                }}
+              />
+            </>
+          )}
+        </div>
       </div>
       {user.bio && (
         <>

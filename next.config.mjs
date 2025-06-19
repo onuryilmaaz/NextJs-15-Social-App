@@ -4,8 +4,8 @@ const nextConfig = {
     staleTimes: {
       dynamic: 30,
     },
+    serverComponentsExternalPackages: ["@node-rs/argon2", "@node-rs/bcrypt"],
   },
-  serverExternalPackages: ["@node-rs/argon2"],
   images: {
     remotePatterns: [
       {

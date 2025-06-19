@@ -20,6 +20,7 @@ export function getUserDataSelect(loggedInUserId: string) {
       select: {
         posts: true,
         followers: true,
+        following: true,
       },
     },
   } satisfies Prisma.UserSelect;
@@ -34,7 +35,7 @@ export function getPostDataInclude(loggedInUserId: string) {
     user: {
       select: getUserDataSelect(loggedInUserId),
     },
-    attachments: true,
+    mediaAttachments: true,
     likes: {
       where: {
         userId: loggedInUserId,
@@ -110,6 +111,28 @@ export interface NotificationsPage {
   nextCursor: string | null;
 }
 
+export interface FollowersPage {
+  followers: Array<{
+    id: string;
+    followerId: string;
+    followingId: string;
+    createdAt: Date;
+    follower: UserData;
+  }>;
+  nextCursor: string | null;
+}
+
+export interface FollowingPage {
+  following: Array<{
+    id: string;
+    followerId: string;
+    followingId: string;
+    createdAt: Date;
+    following: UserData;
+  }>;
+  nextCursor: string | null;
+}
+
 export interface FollowerInfo {
   followers: number;
   isFollowedByUser: boolean;
@@ -131,3 +154,36 @@ export interface NotificationCountInfo {
 export interface MessageCountInfo {
   unreadCount: number;
 }
+
+export type ReportWithRelations = Prisma.ReportGetPayload<{
+  include: {
+    reported: {
+      select: {
+        id: true;
+        username: true;
+        displayName: true;
+        avatarUrl: true;
+      };
+    };
+    reporter: {
+      select: {
+        id: true;
+        username: true;
+        displayName: true;
+        avatarUrl: true;
+      };
+    };
+    post: {
+      select: {
+        id: true;
+        content: true;
+      };
+    };
+    comment: {
+      select: {
+        id: true;
+        text: true;
+      };
+    };
+  };
+}>;

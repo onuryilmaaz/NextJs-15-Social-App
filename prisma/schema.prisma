@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearchPostgres"]
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -10,7 +10,7 @@ datasource db {
 }
 
 model User {
-  id                    String         @id
+  id                    String         @id @default(cuid())
   username              String         @unique
   displayName           String
   email                 String?        @unique
@@ -18,6 +18,9 @@ model User {
   googleId              String?        @unique
   avatarUrl             String?
   bio                   String?
+  isBlocked             Boolean        @default(false)
+  isModerator           Boolean        @default(false)
+  suspendedUntil        DateTime?
   sessions              Session[]
   posts                 Post[]
   following             Follow[]       @relation("Following")
@@ -27,9 +30,20 @@ model User {
   comments              Comment[]
   receivedNotifications Notification[] @relation("Recipient")
   issuedNotifications   Notification[] @relation("Issuer")
+  submittedReports      Report[]       @relation("Reporter")
+  receivedReports       Report[]       @relation("Reported")
+  moderatedReports      Report[]       @relation("ModeratorReports")
+  blockedUsers          Block[]        @relation("Blocking")
+  blockedByUsers        Block[]        @relation("BlockedBy")
+  analytics             UserAnalytics?
+  engagementEvents      EngagementEvent[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@index([username, displayName])
+  @@index([createdAt])
+  @@index([isModerator])
   @@map("users")
 }
 
@@ -39,6 +53,8 @@ model Session {
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
   @@map("sessions")
 }
 
@@ -48,7 +64,12 @@ model Follow {
   followingId String
   following   User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+
   @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([createdAt])
   @@map("follows")
 }
 
@@ -57,18 +78,24 @@ model Post {
   content             String
   userId              String
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attachments         Media[]
+  mediaAttachments    MediaAttachment[]
   likes               Like[]
   bookmarks           Bookmark[]
   comments            Comment[]
   linkedNotifications Notification[]
+  reports             Report[]
+  analytics           PostAnalytics?
+  editedAt            DateTime?
 
   createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("posts")
 }
 
-model Media {
+model MediaAttachment {
   id     String    @id @default(cuid())
   postId String?
   post   Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
@@ -77,7 +104,8 @@ model Media {
 
   createdAt DateTime @default(now())
 
-  @@map("post_media")
+  @@index([postId])
+  @@map("media_attachments")
 }
 
 enum MediaType {
@@ -86,15 +114,19 @@ enum MediaType {
 }
 
 model Comment {
-  id      String @id @default(cuid())
+  id      String   @id @default(cuid())
   content String
   userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   postId  String
-  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reports Report[]
 
   createdAt DateTime @default(now())
 
+  @@index([postId])
+  @@index([userId])
+  @@index([postId, createdAt])
   @@map("comments")
 }
 
@@ -104,7 +136,12 @@ model Like {
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+
   @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+  @@index([createdAt])
   @@map("likes")
 }
 
@@ -118,6 +155,9 @@ model Bookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@index([userId, createdAt])
   @@map("bookmarks")
 }
 
@@ -129,11 +169,17 @@ model Notification {
   issuer      User             @relation("Issuer", fields: [issuerId], references: [id], onDelete: Cascade)
   postId      String?
   post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId   String?
   type        NotificationType
   read        Boolean          @default(false)
+  message     String?
 
   createdAt DateTime @default(now())
 
+  @@index([recipientId])
+  @@index([recipientId, read])
+  @@index([recipientId, createdAt])
+  @@index([type])
   @@map("notifications")
 }
 
@@ -141,4 +187,219 @@ enum NotificationType {
   LIKE
   FOLLOW
   COMMENT
+  MENTION
+  POST_SHARE
+  POST_EDIT
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPT
+  MODERATION_ACTION
+  CONTENT_FLAGGED
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId  String?
+  reported    User?        @relation("Reported", fields: [reportedId], references: [id], onDelete: Cascade)
+  postId      String?
+  post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId   String?
+  comment     Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  type        ReportType
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  moderatorId String?
+  moderator   User?        @relation("ModeratorReports", fields: [moderatorId], references: [id])
+  resolvedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@index([reportedId])
+  @@map("reports")
+}
+
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model ContentModeration {
+  id            String           @id @default(cuid())
+  contentType   ContentType
+  contentId     String
+  flaggedReason String
+  severity      ModerationLevel
+  autoModerated Boolean          @default(false)
+  reviewed      Boolean          @default(false)
+  approved      Boolean?
+  moderatorId   String?
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([autoModerated])
+  @@index([reviewed])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("content_moderation")
+}
+
+enum ReportType {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  INAPPROPRIATE_CONTENT
+  IMPERSONATION
+  COPYRIGHT
+  VIOLENCE
+  SELF_HARM
+  MISINFORMATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ContentType {
+  POST
+  COMMENT
+  USER_PROFILE
+  USER_BIO
+}
+
+enum ModerationLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model UserAnalytics {
+  id                  String @id @default(cuid())
+  userId              String @unique
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileViews        Int    @default(0)
+  postsCount          Int    @default(0)
+  commentsCount       Int    @default(0)
+  likesReceived       Int    @default(0)
+  likesGiven          Int    @default(0)
+  followersGained     Int    @default(0)
+  followingCount      Int    @default(0)
+  totalEngagement     Int    @default(0)
+  averagePostLikes    Float  @default(0)
+  mostActiveHour      Int?
+  lastActiveAt        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([totalEngagement])
+  @@index([lastActiveAt])
+  @@map("user_analytics")
+}
+
+model PostAnalytics {
+  id             String @id @default(cuid())
+  postId         String @unique
+  post           Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  views          Int    @default(0)
+  likes          Int    @default(0)
+  comments       Int    @default(0)
+  shares         Int    @default(0)
+  saves          Int    @default(0)
+  engagementRate Float  @default(0)
+  reachScore     Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([engagementRate])
+  @@index([views])
+  @@map("post_analytics")
+}
+
+model EngagementEvent {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType EngagementType
+  targetId  String          // Post ID, User ID, etc.
+  metadata  Json?
+  timestamp DateTime        @default(now())
+
+  @@index([userId, timestamp])
+  @@index([eventType, timestamp])
+  @@index([timestamp])
+  @@map("engagement_events")
+}
+
+model DailyStats {
+  id               String   @id @default(cuid())
+  date             DateTime @unique
+  totalUsers       Int      @default(0)
+  activeUsers      Int      @default(0)
+  newUsers         Int      @default(0)
+  totalPosts       Int      @default(0)
+  newPosts         Int      @default(0)
+  totalComments    Int      @default(0)
+  newComments      Int      @default(0)
+  totalLikes       Int      @default(0)
+  newLikes         Int      @default(0)
+  totalEngagements Int      @default(0)
+  peakActiveHour   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([date])
+  @@map("daily_stats")
+}
+
+model TrendingTopic {
+  id         String   @id @default(cuid())
+  keyword    String   @unique
+  mentions   Int      @default(1)
+  score      Float    @default(0)
+  category   String?
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([score, isActive])
+  @@index([isActive])
+  @@index([lastSeenAt])
+  @@map("trending_topics")
+}
+
+enum EngagementType {
+  POST_VIEW
+  POST_LIKE
+  POST_COMMENT
+  POST_SHARE
+  POST_SAVE
+  PROFILE_VIEW
+  USER_FOLLOW
+  USER_UNFOLLOW
+  SEARCH_QUERY
+  LOGIN
+  LOGOUT
 }

@@ -3,10 +3,11 @@
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import Post from "@/components/posts/Post";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { PostsPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 
 export default function FollowingFeed() {
   const {
@@ -37,9 +38,15 @@ export default function FollowingFeed() {
 
   if (status === "success" && !posts.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        No posts found. Start following people to see their posts here.
-      </p>
+      <EmptyState
+        icon={<UserPlus className="size-16" />}
+        title="No Posts from Following"
+        description="You're not following anyone yet, or the people you follow haven't posted recently. Discover and follow interesting people to see their posts here!"
+        action={{
+          label: "Find People to Follow",
+          href: "/search",
+        }}
+      />
     );
   }
 

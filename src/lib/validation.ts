@@ -21,9 +21,17 @@ export const loginSchema = z.object({
 export type LoginValues = z.infer<typeof loginSchema>;
 
 export const createPostSchema = z.object({
-  content: requiredString,
-  mediaIds: z.array(z.string()).max(5, "Cannot have more than 5 attachments"),
+  content: z.string().min(1, "Post cannot be empty").max(300),
+  mediaIds: z.array(z.string()).optional(),
 });
+
+export type CreatePostValues = z.infer<typeof createPostSchema>;
+
+export const updatePostSchema = z.object({
+  content: z.string().min(1, "Post cannot be empty").max(300),
+});
+
+export type UpdatePostValues = z.infer<typeof updatePostSchema>;
 
 export const updateUserProfileSchema = z.object({
   displayName: requiredString,
@@ -33,5 +41,8 @@ export const updateUserProfileSchema = z.object({
 export type UpdateUserProfileValues = z.infer<typeof updateUserProfileSchema>;
 
 export const createCommentSchema = z.object({
-  content: requiredString,
+  text: z.string().min(1, "Comment cannot be empty").max(300),
+  postId: z.string(),
 });
+
+export type CreateCommentValues = z.infer<typeof createCommentSchema>;

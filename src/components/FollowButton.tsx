@@ -3,6 +3,7 @@
 import useFollowerInfo from "@/hooks/useFollowerInfo";
 import kyInstance from "@/lib/ky";
 import { FollowerInfo } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import { QueryKey, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
@@ -48,7 +49,7 @@ export default function FollowButton({
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Something went wrong. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });

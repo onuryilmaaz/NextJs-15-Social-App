@@ -2,6 +2,7 @@
 
 import LoadingButton from "@/components/LoadingButton";
 import { PasswordInput } from "@/components/PasswordInput";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import {
   Form,
   FormControl,
@@ -72,6 +73,12 @@ export default function LoginForm() {
           Log in
         </LoadingButton>
       </form>
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-muted" />
+        <span className="text-sm text-muted-foreground">OR</span>
+        <div className="h-px flex-1 bg-muted" />
+      </div>
+      <GoogleSignInButton>Continue with Google</GoogleSignInButton>
     </Form>
   );
 }

@@ -3,6 +3,7 @@
 import { useSession } from "@/app/(main)/SessionProvider";
 import { PostData } from "@/lib/types";
 import { cn, formatRelativeDate } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 import { Media } from "@prisma/client";
 import { MessageSquare } from "lucide-react";
 import Image from "next/image";
@@ -25,8 +26,18 @@ export default function Post({ post }: PostProps) {
 
   const [showComments, setShowComments] = useState(false);
 
+  // Track post view
+  const handlePostView = () => {
+    if (user.id !== post.user.id) {
+      trackEvent(user.id, "POST_VIEW", post.id);
+    }
+  };
+
   return (
-    <article className="group/post space-y-3 rounded-2xl bg-card p-5 shadow-sm">
+    <article
+      className="group/post space-y-3 rounded-2xl bg-card p-5 shadow-sm"
+      onMouseEnter={handlePostView}
+    >
       <div className="flex justify-between gap-3">
         <div className="flex flex-wrap gap-3">
           <UserTooltip user={post.user}>
@@ -52,18 +63,16 @@ export default function Post({ post }: PostProps) {
             </Link>
           </div>
         </div>
-        {post.user.id === user.id && (
-          <PostMoreButton
-            post={post}
-            className="opacity-0 transition-opacity group-hover/post:opacity-100"
-          />
-        )}
+        <PostMoreButton
+          post={post}
+          className="opacity-0 transition-opacity group-hover/post:opacity-100"
+        />
       </div>
       <Linkify>
         <div className="whitespace-pre-line break-words">{post.content}</div>
       </Linkify>
-      {!!post.attachments.length && (
-        <MediaPreviews attachments={post.attachments} />
+      {!!post.mediaAttachments.length && (
+        <MediaPreviews attachments={post.mediaAttachments} />
       )}
       <hr className="text-muted-foreground" />
       <div className="flex justify-between gap-5">
@@ -95,7 +104,7 @@ export default function Post({ post }: PostProps) {
 }
 
 interface MediaPreviewsProps {
-  attachments: Media[];
+  attachments: PostData["mediaAttachments"];
 }
 
 function MediaPreviews({ attachments }: MediaPreviewsProps) {

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import kyInstance from "@/lib/ky";
 import { NotificationCountInfo } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import { Bell, BellRing } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface NotificationsButtonProps {
   initialState: NotificationCountInfo;
@@ -24,19 +25,33 @@ export default function NotificationsButton({
     refetchInterval: 60 * 1000,
   });
 
+  const hasUnread = !!data.unreadCount;
+
   return (
     <Button
       variant="ghost"
-      className="flex items-center justify-start gap-3"
-      title="Notifications"
+      className={cn(
+        "flex items-center justify-start gap-3 transition-all duration-200",
+        hasUnread && "text-primary",
+      )}
+      title={`Notifications${hasUnread ? ` (${data.unreadCount})` : ""}`}
       asChild
     >
       <Link href="/notifications">
         <div className="relative">
-          <Bell />
-          {!!data.unreadCount && (
-            <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1 text-xs font-medium tabular-nums text-primary-foreground">
-              {data.unreadCount}
+          {hasUnread ? (
+            <BellRing
+              className={cn(
+                "transition-all duration-200",
+                hasUnread && "animate-pulse",
+              )}
+            />
+          ) : (
+            <Bell />
+          )}
+          {hasUnread && (
+            <span className="absolute -right-1 -top-1 animate-bounce rounded-full bg-primary px-1 text-xs font-medium tabular-nums text-primary-foreground">
+              {data.unreadCount > 99 ? "99+" : data.unreadCount}
             </span>
           )}
         </div>

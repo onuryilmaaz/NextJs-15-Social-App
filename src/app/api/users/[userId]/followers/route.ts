@@ -1,6 +1,11 @@
 import { validateRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { FollowerInfo } from "@/lib/types";
+import {
+  createNotification,
+  deleteRelatedNotifications,
+} from "@/lib/notifications";
+import { NotificationType } from "@prisma/client";
 
 export async function GET(
   req: Request,
@@ -59,28 +64,26 @@ export async function POST(
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.$transaction([
-      prisma.follow.upsert({
-        where: {
-          followerId_followingId: {
-            followerId: loggedInUser.id,
-            followingId: userId,
-          },
-        },
-        create: {
+    await prisma.follow.upsert({
+      where: {
+        followerId_followingId: {
           followerId: loggedInUser.id,
           followingId: userId,
         },
-        update: {},
-      }),
-      prisma.notification.create({
-        data: {
-          issuerId: loggedInUser.id,
-          recipientId: userId,
-          type: "FOLLOW",
-        },
-      }),
-    ]);
+      },
+      create: {
+        followerId: loggedInUser.id,
+        followingId: userId,
+      },
+      update: {},
+    });
+
+    // Send notification using the new notification service
+    await createNotification({
+      type: NotificationType.FOLLOW,
+      recipientId: userId,
+      issuerId: loggedInUser.id,
+    });
 
     return new Response();
   } catch (error) {
@@ -100,21 +103,19 @@ export async function DELETE(
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.$transaction([
-      prisma.follow.deleteMany({
-        where: {
-          followerId: loggedInUser.id,
-          followingId: userId,
-        },
-      }),
-      prisma.notification.deleteMany({
-        where: {
-          issuerId: loggedInUser.id,
-          recipientId: userId,
-          type: "FOLLOW",
-        },
-      }),
-    ]);
+    await prisma.follow.deleteMany({
+      where: {
+        followerId: loggedInUser.id,
+        followingId: userId,
+      },
+    });
+
+    // Delete related notifications using the new notification service
+    await deleteRelatedNotifications({
+      type: NotificationType.FOLLOW,
+      recipientId: userId,
+      issuerId: loggedInUser.id,
+    });
 
     return new Response();
   } catch (error) {

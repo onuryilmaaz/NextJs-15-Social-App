@@ -90,9 +90,7 @@
   --str-chat__background-color: theme(colors.card.DEFAULT);
   --str-chat__secondary-background-color: theme(colors.card.DEFAULT);
   --str-chat__message-textarea-background-color: theme(colors.background);
-  --str-chat__channel-preview-active-background-color: theme(
-    colors.accent.DEFAULT
-  );
+  --str-chat__channel-preview-active-background-color: hsl(var(--accent));
   --str-chat__channel-preview-hover-background-color: var(
     --str-chat__channel-preview-active-background-color
   );

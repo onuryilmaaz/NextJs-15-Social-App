@@ -3,10 +3,11 @@
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import Post from "@/components/posts/Post";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { PostsPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users, Edit3 } from "lucide-react";
 
 export default function ForYouFeed() {
   const {
@@ -37,9 +38,21 @@ export default function ForYouFeed() {
 
   if (status === "success" && !posts.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        No one has posted anything yet.
-      </p>
+      <EmptyState
+        icon={<Edit3 className="size-16" />}
+        title="Welcome to BugBook!"
+        description="Be the first to share something interesting. Create your first post and start the conversation!"
+        action={{
+          label: "Create Your First Post",
+          onClick: () => {
+            const postEditor = document.querySelector(".ProseMirror");
+            if (postEditor) {
+              postEditor.scrollIntoView({ behavior: "smooth" });
+              (postEditor as HTMLElement).focus();
+            }
+          },
+        }}
+      />
     );
   }
 

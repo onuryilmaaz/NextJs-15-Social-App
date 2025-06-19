@@ -1,9 +1,14 @@
 import TrendsSidebar from "@/components/TrendsSidebar";
 import { Metadata } from "next";
 import SearchResults from "./SearchResults";
+import SearchTabs from "./SearchTabs";
 
 interface PageProps {
-  searchParams: { q: string };
+  searchParams: {
+    q: string;
+    type?: string;
+    sortBy?: string;
+  };
 }
 
 export function generateMetadata({ searchParams: { q } }: PageProps): Metadata {
@@ -12,7 +17,9 @@ export function generateMetadata({ searchParams: { q } }: PageProps): Metadata {
   };
 }
 
-export default function Page({ searchParams: { q } }: PageProps) {
+export default function Page({
+  searchParams: { q, type = "all", sortBy = "relevance" },
+}: PageProps) {
   return (
     <main className="flex w-full min-w-0 gap-5">
       <div className="w-full min-w-0 space-y-5">
@@ -21,7 +28,8 @@ export default function Page({ searchParams: { q } }: PageProps) {
             Search results for &quot;{q}&quot;
           </h1>
         </div>
-        <SearchResults query={q} />
+        <SearchTabs query={q} currentType={type} currentSortBy={sortBy} />
+        <SearchResults query={q} type={type} sortBy={sortBy} />
       </div>
       <TrendsSidebar />
     </main>

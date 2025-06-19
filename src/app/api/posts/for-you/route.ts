@@ -15,7 +15,20 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get blocked users
+    const blockedUsers = await prisma.block.findMany({
+      where: { blockerId: user.id },
+      select: { blockedId: true },
+    });
+
+    const blockedUserIds = blockedUsers.map((block) => block.blockedId);
+
     const posts = await prisma.post.findMany({
+      where: {
+        userId: {
+          notIn: blockedUserIds,
+        },
+      },
       include: getPostDataInclude(user.id),
       orderBy: { createdAt: "desc" },
       take: pageSize + 1,

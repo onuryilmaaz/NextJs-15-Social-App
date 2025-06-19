@@ -1,5 +1,5 @@
 import { validateRequest } from "@/auth";
-import prisma from "@/lib/prisma";
+import { markNotificationsAsRead } from "@/lib/notifications";
 
 export async function PATCH() {
   try {
@@ -9,15 +9,8 @@ export async function PATCH() {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.notification.updateMany({
-      where: {
-        recipientId: user.id,
-        read: false,
-      },
-      data: {
-        read: true,
-      },
-    });
+    // Mark all notifications as read using the new notification service
+    await markNotificationsAsRead(user.id);
 
     return new Response();
   } catch (error) {

@@ -3,16 +3,23 @@
 import InfiniteScrollContainer from "@/components/InfiniteScrollContainer";
 import Post from "@/components/posts/Post";
 import PostsLoadingSkeleton from "@/components/posts/PostsLoadingSkeleton";
+import EmptyState from "@/components/EmptyState";
 import kyInstance from "@/lib/ky";
 import { PostsPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 interface SearchResultsProps {
   query: string;
+  type?: string;
+  sortBy?: string;
 }
 
-export default function SearchResults({ query }: SearchResultsProps) {
+export default function SearchResults({
+  query,
+  type = "all",
+  sortBy = "relevance",
+}: SearchResultsProps) {
   const {
     data,
     fetchNextPage,
@@ -21,12 +28,14 @@ export default function SearchResults({ query }: SearchResultsProps) {
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    queryKey: ["post-feed", "search", query],
+    queryKey: ["post-feed", "search", query, type, sortBy],
     queryFn: ({ pageParam }) =>
       kyInstance
         .get("/api/search", {
           searchParams: {
             q: query,
+            type,
+            sortBy,
             ...(pageParam ? { cursor: pageParam } : {}),
           },
         })
@@ -44,9 +53,15 @@ export default function SearchResults({ query }: SearchResultsProps) {
 
   if (status === "success" && !posts.length && !hasNextPage) {
     return (
-      <p className="text-center text-muted-foreground">
-        No posts found for this query.
-      </p>
+      <EmptyState
+        icon={<Search className="size-16" />}
+        title="No Results Found"
+        description={`No posts found for "${query}". Try different keywords or explore other topics.`}
+        action={{
+          label: "Browse All Posts",
+          href: "/",
+        }}
+      />
     );
   }
 

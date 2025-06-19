@@ -1,4 +1,5 @@
 import { CommentsPage } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import {
   InfiniteData,
   QueryKey,
@@ -55,7 +56,7 @@ export function useSubmitCommentMutation(postId: string) {
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Failed to submit comment. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -98,7 +99,7 @@ export function useDeleteCommentMutation() {
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Failed to delete comment. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });

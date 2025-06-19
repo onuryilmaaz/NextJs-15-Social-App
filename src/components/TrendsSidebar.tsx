@@ -2,20 +2,25 @@ import { validateRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { getUserDataSelect } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp, Users, FileText } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { Suspense } from "react";
 import FollowButton from "./FollowButton";
 import UserAvatar from "./UserAvatar";
 import UserTooltip from "./UserTooltip";
+import ActivityFeed from "./realtime/ActivityFeed";
+import { OnlineUsers } from "./realtime/LiveUserStatus";
 
 export default function TrendsSidebar() {
   return (
     <div className="sticky top-[5.25rem] hidden h-fit w-72 flex-none space-y-5 md:block lg:w-80">
       <Suspense fallback={<Loader2 className="mx-auto animate-spin" />}>
+        <OnlineUsers />
+        <ActivityFeed />
         <WhoToFollow />
         <TrendingTopics />
+        <QuickStats />
       </Suspense>
     </div>
   );
@@ -121,6 +126,57 @@ async function TrendingTopics() {
           </Link>
         );
       })}
+    </div>
+  );
+}
+
+async function QuickStats() {
+  // Get platform stats
+  const [totalUsers, totalPosts, totalComments] = await Promise.all([
+    prisma.user.count(),
+    prisma.post.count(),
+    prisma.comment.count(),
+  ]);
+
+  return (
+    <div className="space-y-5 rounded-2xl bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-2">
+        <TrendingUp className="size-5 text-primary" />
+        <div className="text-xl font-bold">Platform Stats</div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="size-4 text-muted-foreground" />
+            <span className="text-sm">Total Users</span>
+          </div>
+          <span className="font-semibold">{formatNumber(totalUsers)}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" />
+            <span className="text-sm">Total Posts</span>
+          </div>
+          <span className="font-semibold">{formatNumber(totalPosts)}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="size-4 text-muted-foreground" />
+            <span className="text-sm">Comments</span>
+          </div>
+          <span className="font-semibold">{formatNumber(totalComments)}</span>
+        </div>
+      </div>
+
+      <Link
+        href="/analytics"
+        className="block text-center text-sm text-primary hover:underline"
+      >
+        View detailed analytics →
+      </Link>
     </div>
   );
 }

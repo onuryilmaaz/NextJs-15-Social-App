@@ -3,6 +3,7 @@
 import { lucia } from "@/auth";
 import prisma from "@/lib/prisma";
 import { loginSchema, LoginValues } from "@/lib/validation";
+import { createError, ErrorType } from "@/lib/errors";
 import { verify } from "@node-rs/argon2";
 import { isRedirectError } from "next/dist/client/components/redirect";
 import { cookies } from "next/headers";
@@ -10,7 +11,7 @@ import { redirect } from "next/navigation";
 
 export async function login(
   credentials: LoginValues,
-): Promise<{ error: string }> {
+): Promise<{ error: string; type?: ErrorType }> {
   try {
     const { username, password } = loginSchema.parse(credentials);
 
@@ -25,7 +26,9 @@ export async function login(
 
     if (!existingUser || !existingUser.passwordHash) {
       return {
-        error: "Incorrect username or password",
+        error:
+          "Invalid username or password. Please check your credentials and try again.",
+        type: ErrorType.AUTHENTICATION_ERROR,
       };
     }
 
@@ -38,7 +41,9 @@ export async function login(
 
     if (!validPassword) {
       return {
-        error: "Incorrect username or password",
+        error:
+          "Invalid username or password. Please check your credentials and try again.",
+        type: ErrorType.AUTHENTICATION_ERROR,
       };
     }
 
@@ -54,8 +59,18 @@ export async function login(
   } catch (error) {
     if (isRedirectError(error)) throw error;
     console.error(error);
+
+    // Handle validation errors specifically
+    if (error && typeof error === "object" && "issues" in error) {
+      return {
+        error: "Please check your input and try again.",
+        type: ErrorType.VALIDATION_ERROR,
+      };
+    }
+
     return {
-      error: "Something went wrong. Please try again.",
+      error: "Unable to sign in at this time. Please try again later.",
+      type: ErrorType.UNKNOWN_ERROR,
     };
   }
 }

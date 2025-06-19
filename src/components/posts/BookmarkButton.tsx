@@ -1,5 +1,6 @@
 import kyInstance from "@/lib/ky";
 import { BookmarkInfo } from "@/lib/types";
+import { getErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import {
   QueryKey,
@@ -58,7 +59,7 @@ export default function BookmarkButton({
       console.error(error);
       toast({
         variant: "destructive",
-        description: "Something went wrong. Please try again.",
+        description: getErrorMessage(error),
       });
     },
   });
