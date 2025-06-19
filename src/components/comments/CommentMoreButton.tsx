@@ -1,3 +1,5 @@
+"use client";
+
 import { CommentData } from "@/lib/types";
 import { MoreHorizontal, Trash2, Flag, UserX } from "lucide-react";
 import { useState } from "react";

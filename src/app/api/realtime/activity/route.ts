@@ -18,27 +18,33 @@ export async function GET(req: NextRequest) {
     const stream = new ReadableStream({
       start(controller) {
         // Store the connection
-        activityConnections.set(`activity_${user.id}`, controller);
+        const connectionId = `activity_${user.id}`;
+        activityConnections.set(connectionId, controller);
 
         // Send initial connection message
-        controller.enqueue(
-          `data: ${JSON.stringify({
-            type: "connected",
-            message: "Activity feed connected",
-            timestamp: Date.now(),
-          })}\n\n`,
-        );
-
-        // Send recent activities from queue
-        activityQueue.slice(-10).forEach((activity) => {
+        try {
           controller.enqueue(
             `data: ${JSON.stringify({
-              type: "activity",
-              activity,
+              type: "connected",
+              message: "Activity feed connected",
               timestamp: Date.now(),
             })}\n\n`,
           );
-        });
+
+          // Send recent activities from queue
+          const recentActivities = activityQueue.slice(-10);
+          if (recentActivities.length > 0) {
+            controller.enqueue(
+              `data: ${JSON.stringify({
+                type: "initial_activities",
+                activities: recentActivities,
+                timestamp: Date.now(),
+              })}\n\n`,
+            );
+          }
+        } catch (error) {
+          console.error("Error sending initial data:", error);
+        }
 
         // Send heartbeat every 30 seconds
         const heartbeat = setInterval(() => {
@@ -51,20 +57,19 @@ export async function GET(req: NextRequest) {
             );
           } catch (error) {
             clearInterval(heartbeat);
-            activityConnections.delete(`activity_${user.id}`);
+            activityConnections.delete(connectionId);
           }
         }, 30000);
 
-        // Cleanup on connection close
+        // Cleanup function
         const cleanup = () => {
           clearInterval(heartbeat);
-          activityConnections.delete(`activity_${user.id}`);
+          activityConnections.delete(connectionId);
         };
-
-        // Note: controller doesn't have closed property in this context
       },
       cancel() {
-        activityConnections.delete(`activity_${user.id}`);
+        const connectionId = `activity_${user.id}`;
+        activityConnections.delete(connectionId);
       },
     });
 
@@ -101,34 +106,38 @@ export async function broadcastActivity(activity: {
   timestamp: string;
   metadata?: Record<string, any>;
 }) {
-  // Add to activity queue (keep last 100 activities)
-  activityQueue.push(activity);
-  if (activityQueue.length > 100) {
-    activityQueue = activityQueue.slice(-100);
-  }
-
-  // Broadcast to all connected clients
-  const message = JSON.stringify({
-    type: "activity",
-    activity,
-    timestamp: Date.now(),
-  });
-
-  const disconnectedConnections: string[] = [];
-
-  for (const [connectionId, controller] of activityConnections) {
-    try {
-      controller.enqueue(`data: ${message}\n\n`);
-    } catch (error) {
-      console.error(`Error sending to connection ${connectionId}:`, error);
-      disconnectedConnections.push(connectionId);
+  try {
+    // Add to activity queue (keep last 100 activities)
+    activityQueue.push(activity);
+    if (activityQueue.length > 100) {
+      activityQueue = activityQueue.slice(-100);
     }
-  }
 
-  // Clean up disconnected connections
-  disconnectedConnections.forEach((id) => {
-    activityConnections.delete(id);
-  });
+    // Broadcast to all connected clients
+    const message = JSON.stringify({
+      type: "activity",
+      activity,
+      timestamp: Date.now(),
+    });
+
+    const disconnectedConnections: string[] = [];
+
+    for (const [connectionId, controller] of activityConnections) {
+      try {
+        controller.enqueue(`data: ${message}\n\n`);
+      } catch (error) {
+        console.error(`Error sending to connection ${connectionId}:`, error);
+        disconnectedConnections.push(connectionId);
+      }
+    }
+
+    // Clean up disconnected connections
+    disconnectedConnections.forEach((id) => {
+      activityConnections.delete(id);
+    });
+  } catch (error) {
+    console.error("Error broadcasting activity:", error);
+  }
 }
 
 // Function to get current activity stats

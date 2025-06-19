@@ -1,26 +1,41 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { NotificationData } from "@/lib/types";
 import { useSession } from "./SessionProvider";
+import ClientOnly from "@/components/ClientOnly";
 
 interface RealtimeNotificationsProviderProps {
   children: React.ReactNode;
 }
 
-export default function RealtimeNotificationsProvider({
+function RealtimeNotificationsContent({
   children,
 }: RealtimeNotificationsProviderProps) {
   const { user } = useSession();
 
-  const { connectionStatus } = useRealtimeNotifications({
-    enabled: true,
-    showToasts: true,
-    onNotification: (notification: NotificationData) => {
+  // Memoize the notification handler to prevent re-renders
+  const handleNotification = useMemo(
+    () => (notification: NotificationData) => {
       // Custom logic for handling notifications can be added here
-      console.log("New notification received:", notification.type);
+      if (process.env.NODE_ENV === "development") {
+        console.log("New notification received:", notification.type);
+      }
     },
+    [],
+  );
+
+  const { connectionStatus } = useRealtimeNotifications({
+    enabled: !!user, // Only enable if user is logged in
+    showToasts: true,
+    onNotification: handleNotification,
   });
+
+  // Don't render connection status if user is not logged in
+  if (!user) {
+    return <>{children}</>;
+  }
 
   return (
     <>
@@ -37,10 +52,20 @@ export default function RealtimeNotificationsProvider({
                   : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
             }`}
           >
-            SSE: {connectionStatus}
+            {connectionStatus}
           </div>
         </div>
       )}
     </>
+  );
+}
+
+export default function RealtimeNotificationsProvider({
+  children,
+}: RealtimeNotificationsProviderProps) {
+  return (
+    <ClientOnly fallback={<>{children}</>}>
+      <RealtimeNotificationsContent>{children}</RealtimeNotificationsContent>
+    </ClientOnly>
   );
 }

@@ -2,6 +2,7 @@ import LoadingButton from "@/components/LoadingButton";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -91,6 +92,9 @@ export default function NewChatDialog({
       <DialogContent className="bg-card p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>New chat</DialogTitle>
+          <DialogDescription>
+            Search for users to start a new conversation with.
+          </DialogDescription>
         </DialogHeader>
         <div>
           <div className="group relative">

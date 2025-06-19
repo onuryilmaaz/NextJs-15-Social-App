@@ -12,7 +12,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const unusedMedia = await prisma.media.findMany({
+    const unusedMedia = await prisma.mediaAttachment.findMany({
       where: {
         postId: null,
         ...(process.env.NODE_ENV === "production"
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       new UTApi().deleteFiles(fileKeys);
     }
 
-    await prisma.media.deleteMany({
+    await prisma.mediaAttachment.deleteMany({
       where: {
         id: {
           in: unusedMedia.map((m) => m.id),

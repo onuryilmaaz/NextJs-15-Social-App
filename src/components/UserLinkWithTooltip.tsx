@@ -7,12 +7,13 @@ import { HTTPError } from "ky";
 import Link from "next/link";
 import { PropsWithChildren } from "react";
 import UserTooltip from "./UserTooltip";
+import ClientOnly from "./ClientOnly";
 
 interface UserLinkWithTooltipProps extends PropsWithChildren {
   username: string;
 }
 
-export default function UserLinkWithTooltip({
+function UserLinkWithTooltipContent({
   children,
   username,
 }: UserLinkWithTooltipProps) {
@@ -49,5 +50,24 @@ export default function UserLinkWithTooltip({
         {children}
       </Link>
     </UserTooltip>
+  );
+}
+
+export default function UserLinkWithTooltip({
+  children,
+  username,
+}: UserLinkWithTooltipProps) {
+  const fallbackLink = (
+    <Link href={`/users/${username}`} className="text-primary hover:underline">
+      {children}
+    </Link>
+  );
+
+  return (
+    <ClientOnly fallback={fallbackLink}>
+      <UserLinkWithTooltipContent username={username}>
+        {children}
+      </UserLinkWithTooltipContent>
+    </ClientOnly>
   );
 }

@@ -1,0 +1,7 @@
+<svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+  <rect width="390" height="844" fill="#f8f9fa"/>
+  <rect width="390" height="100" fill="#000000"/>
+  <text x="195" y="65" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="18" font-weight="bold">EchoVerse</text>
+  <rect x="20" y="130" width="350" height="600" fill="#ffffff" stroke="#e5e7eb" rx="16"/>
+  <text x="195" y="420" text-anchor="middle" fill="#6b7280" font-family="system-ui, sans-serif" font-size="14">EchoVerse Mobile</text>
+</svg>

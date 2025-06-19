@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-15-social-media-app",
+  "name": "echoverse",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,9 @@
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
-    "performance:check": "node scripts/performance-check.js"
+    "performance:check": "node scripts/performance-check.js",
+    "generate:icons": "node scripts/generate-simple-icons.js",
+    "generate:png-icons": "node scripts/generate-png-icons.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.832.0",
@@ -70,6 +72,7 @@
     "postcss": "^8",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
+    "sharp": "^0.34.2",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

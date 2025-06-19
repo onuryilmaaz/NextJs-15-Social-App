@@ -4,6 +4,7 @@ import LoadingButton from "@/components/LoadingButton";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -79,6 +80,9 @@ export default function EditProfileDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
+          <DialogDescription>
+            Update your profile information and avatar.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
           <Label>Avatar</Label>

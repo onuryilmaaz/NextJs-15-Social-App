@@ -1,0 +1,8 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#f8f9fa"/>
+  <rect width="1280" height="80" fill="#000000"/>
+  <text x="640" y="50" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24" font-weight="bold">EchoVerse</text>
+  <rect x="100" y="120" width="400" height="500" fill="#ffffff" stroke="#e5e7eb" rx="16"/>
+  <rect x="780" y="120" width="400" height="500" fill="#ffffff" stroke="#e5e7eb" rx="16"/>
+  <text x="640" y="400" text-anchor="middle" fill="#6b7280" font-family="system-ui, sans-serif" font-size="16">EchoVerse Desktop</text>
+</svg>

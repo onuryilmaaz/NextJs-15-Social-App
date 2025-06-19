@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#000000"/>
+  
+  <!-- Main echo circles -->
+  <circle cx="256" cy="256" r="80" fill="none" stroke="#ffffff" stroke-width="8" opacity="1"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.7"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.3"/>
+  
+  <!-- Central dot -->
+  <circle cx="256" cy="256" r="12" fill="#ffffff"/>
+  
+  <!-- Corner echo elements -->
+  <circle cx="120" cy="120" r="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  <circle cx="392" cy="120" r="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  <circle cx="120" cy="392" r="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  <circle cx="392" cy="392" r="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Text element suggestion -->
+  <path d="M180 320 L200 300 L220 320 L240 300 L260 320 L280 300 L300 320 L320 300 L340 320" 
+        fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
+</svg> 

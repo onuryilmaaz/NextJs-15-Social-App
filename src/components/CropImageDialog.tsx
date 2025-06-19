@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -37,6 +38,9 @@ export default function CropImageDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Crop image</DialogTitle>
+          <DialogDescription>
+            Adjust the image crop area and click crop when you're satisfied.
+          </DialogDescription>
         </DialogHeader>
         <Cropper
           src={src}

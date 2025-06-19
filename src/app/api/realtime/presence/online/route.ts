@@ -142,6 +142,29 @@ async function sendOnlineUsersUpdate() {
     });
   } catch (error) {
     console.error("Error sending online users update:", error);
+
+    // Send empty users list on error to prevent client hanging
+    const errorMessage = JSON.stringify({
+      type: "online_users",
+      users: [],
+      total: 0,
+      timestamp: Date.now(),
+      error: "Unable to fetch online users",
+    });
+
+    const disconnectedConnections: string[] = [];
+
+    for (const [connectionId, controller] of onlineUsersConnections) {
+      try {
+        controller.enqueue(`data: ${errorMessage}\n\n`);
+      } catch (error) {
+        disconnectedConnections.push(connectionId);
+      }
+    }
+
+    disconnectedConnections.forEach((id) => {
+      onlineUsersConnections.delete(id);
+    });
   }
 }
 

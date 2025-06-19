@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { MediaAttachment } from "@prisma/client";
 import { ModerationService } from "@/lib/moderation";
 import { ContentType } from "@prisma/client";
+import { extractHashtags, updateTrendingTopics } from "@/lib/hashtag-utils";
 
 const s3Client = new S3Client({
   // ... existing code ...
@@ -35,6 +36,15 @@ export async function submitPost(input: {
     },
     include: getPostDataInclude(user.id),
   });
+
+  // Extract hashtags and update trending topics asynchronously
+  const hashtags = extractHashtags(content);
+  if (hashtags.length > 0) {
+    // Don't await this to avoid slowing down post creation
+    updateTrendingTopics(hashtags).catch((error) =>
+      console.error("Failed to update trending topics:", error),
+    );
+  }
 
   return newPost;
 }
@@ -76,6 +86,15 @@ export async function createPost(values: CreatePostValues) {
     },
   });
 
+  // Extract hashtags and update trending topics asynchronously
+  const hashtags = extractHashtags(content);
+  if (hashtags.length > 0) {
+    // Don't await this to avoid slowing down post creation
+    updateTrendingTopics(hashtags).catch((error) =>
+      console.error("Failed to update trending topics:", error),
+    );
+  }
+
   return newPost;
 }
 
@@ -112,6 +131,15 @@ export async function updatePost(postId: string, content: string) {
       mediaAttachments: true,
     },
   });
+
+  // Extract hashtags and update trending topics asynchronously
+  const hashtags = extractHashtags(content);
+  if (hashtags.length > 0) {
+    // Don't await this to avoid slowing down post update
+    updateTrendingTopics(hashtags).catch((error) =>
+      console.error("Failed to update trending topics:", error),
+    );
+  }
 
   return updatedPost;
 }

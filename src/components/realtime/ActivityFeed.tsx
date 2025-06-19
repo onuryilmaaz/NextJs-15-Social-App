@@ -47,9 +47,15 @@ interface ActivityEvent {
 export default function ActivityFeed() {
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const eventSource = new EventSource("/api/realtime/activity");
 
     eventSource.onopen = () => {
@@ -86,7 +92,12 @@ export default function ActivityFeed() {
       eventSource.close();
       setIsConnected(false);
     };
-  }, [queryClient]);
+  }, [queryClient, mounted]);
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   const getActivityIcon = (type: string) => {
     switch (type) {

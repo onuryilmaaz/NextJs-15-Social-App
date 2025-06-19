@@ -1,26 +1,61 @@
-# Next.js 15 Social Media App (BugBook)
+# EchoVerse 🌐
 
-A full-stack social media application built with Next.js 15, featuring real-time messaging, file uploads, and comprehensive social features.
+**Connect and share in the digital echo chamber - where every voice resonates**
 
-## Features
+A full-stack social media application built with Next.js 15, featuring real-time messaging, advanced analytics, trending topics, and comprehensive social features.
 
-- 🔐 Authentication (Email/Password and Google OAuth)
-- 📝 Create, edit, and delete posts with media attachments
-- 💬 Real-time messaging and chat
-- 👥 Follow/unfollow users
-- ❤️ Like and bookmark posts
-- 🔔 Real-time notifications with Server-Sent Events (SSE)
-- ⚡ Enhanced notification types (likes, follows, comments, mentions, shares)
-- 📡 Live notification updates with connection status monitoring
-- 🛡️ Content moderation with automated detection and user reporting
-- 🚫 User blocking system with content filtering
-- 🖼️ Image and video uploads with cropping
-- 🔍 Advanced search with autocomplete, hashtags, and user suggestions
-- 📊 Search filtering by type (posts, users) and sorting options
-- 👤 Enhanced user profiles with tabs (Posts, Media, Likes, About)
-- 👥 Followers and following lists with infinite scroll
-- 📱 Responsive design with dark/light theme
-- ✨ Beautiful empty states with actionable guidance
+## ✨ Key Features
+
+### 🔐 **Authentication & Security**
+
+- Email/Password and Google OAuth authentication
+- Rate limiting for API protection
+- Password reset functionality
+- User blocking and content moderation
+
+### 📝 **Content Creation**
+
+- Rich text posts with media attachments
+- Image and video uploads with cropping
+- Hashtag support with trending topics
+- Post editing and deletion
+
+### 💬 **Real-time Features**
+
+- Live messaging and chat (Stream Chat integration)
+- Server-Sent Events (SSE) for notifications
+- Live typing indicators
+- Online presence tracking
+- Real-time activity feeds
+
+### 🔍 **Discovery & Search**
+
+- Advanced search with autocomplete
+- Trending topics and hashtag exploration
+- User discovery and recommendations
+- Content filtering and sorting
+
+### 📊 **Analytics & Insights**
+
+- User engagement analytics
+- Platform-wide statistics
+- Performance monitoring
+- Admin dashboard
+
+### 🎨 **User Experience**
+
+- Responsive design with dark/light/system themes
+- Progressive Web App (PWA) support
+- Comprehensive error handling
+- Loading states and skeleton screens
+- Beautiful empty states with actionable guidance
+
+### 🛡️ **Moderation & Safety**
+
+- Automated content moderation
+- User reporting system
+- Admin moderation tools
+- Content filtering
 
 ## Tech Stack
 

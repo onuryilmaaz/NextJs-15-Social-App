@@ -1,6 +1,5 @@
 "use client";
 
-import { logout } from "@/app/(auth)/actions";
 import { useSession } from "@/app/(main)/SessionProvider";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import UserAvatar from "./UserAvatar";
+import kyInstance from "@/lib/ky";
+import { useRouter } from "next/navigation";
 
 interface UserButtonProps {
   className?: string;
@@ -35,10 +36,21 @@ interface UserButtonProps {
 
 export default function UserButton({ className }: UserButtonProps) {
   const { user } = useSession();
-
   const { theme, setTheme } = useTheme();
-
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      queryClient.clear();
+      await kyInstance.post("/api/auth/logout");
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Fallback: force reload to clear client state
+      window.location.href = "/login";
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -88,12 +100,7 @@ export default function UserButton({ className }: UserButtonProps) {
           </DropdownMenuPortal>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            queryClient.clear();
-            logout();
-          }}
-        >
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOutIcon className="mr-2 size-4" />
           Logout
         </DropdownMenuItem>

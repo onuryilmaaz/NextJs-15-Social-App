@@ -3,7 +3,7 @@
 import { useSession } from "@/app/(main)/SessionProvider";
 import { PostData } from "@/lib/types";
 import { cn, formatRelativeDate } from "@/lib/utils";
-import { trackEvent } from "@/lib/analytics";
+import { trackPostView } from "@/lib/client-analytics";
 import { Media } from "@prisma/client";
 import { MessageSquare } from "lucide-react";
 import Image from "next/image";
@@ -29,7 +29,7 @@ export default function Post({ post }: PostProps) {
   // Track post view
   const handlePostView = () => {
     if (user.id !== post.user.id) {
-      trackEvent(user.id, "POST_VIEW", post.id);
+      trackPostView(post.id, { viewedBy: user.id });
     }
   };
 

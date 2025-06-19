@@ -62,23 +62,34 @@ export default function SearchField() {
       try {
         const suggestions: SearchSuggestion[] = [];
 
-        // Fetch users
-        const usersResponse = await kyInstance
-          .get("/api/search/users", {
-            searchParams: { q: debouncedQuery, limit: "3" },
-          })
-          .json<{ users: UserData[] }>();
+        // Fetch users with timeout and error handling
+        try {
+          const usersResponse = await kyInstance
+            .get("/api/search/users", {
+              searchParams: { q: debouncedQuery, limit: "3" },
+              timeout: 15000, // 15 second timeout
+              retry: {
+                limit: 1,
+                methods: ["get"],
+                statusCodes: [408, 500, 502, 503, 504],
+              },
+            })
+            .json<{ users: UserData[] }>();
 
-        usersResponse.users.forEach((user) => {
-          suggestions.push({
-            type: "user",
-            id: user.id,
-            text: `@${user.username}`,
-            displayName: user.displayName,
-            username: user.username,
-            avatarUrl: user.avatarUrl,
+          usersResponse.users.forEach((user) => {
+            suggestions.push({
+              type: "user",
+              id: user.id,
+              text: `@${user.username}`,
+              displayName: user.displayName,
+              username: user.username,
+              avatarUrl: user.avatarUrl,
+            });
           });
-        });
+        } catch (userError) {
+          console.error("Error fetching user suggestions:", userError);
+          // Continue with other suggestions even if user search fails
+        }
 
         // Add hashtag suggestion if query doesn't start with #
         if (!debouncedQuery.startsWith("#")) {
@@ -92,7 +103,16 @@ export default function SearchField() {
         setSuggestions(suggestions);
       } catch (error) {
         console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
+        // Fallback to just hashtag suggestion
+        const fallbackSuggestions: SearchSuggestion[] = [];
+        if (!debouncedQuery.startsWith("#")) {
+          fallbackSuggestions.push({
+            type: "hashtag",
+            id: `hashtag-${debouncedQuery}`,
+            text: `#${debouncedQuery}`,
+          });
+        }
+        setSuggestions(fallbackSuggestions);
       }
     };
 

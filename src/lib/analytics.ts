@@ -2,10 +2,139 @@ import { EngagementType } from "@prisma/client";
 import prisma from "./prisma";
 import { startOfDay, endOfDay, subDays, format } from "date-fns";
 
+// Add batch processing for analytics events
+interface PendingAnalyticsUpdate {
+  userId: string;
+  eventType: EngagementType;
+  targetId: string;
+  metadata?: Record<string, any>;
+}
+
+const pendingUpdates: PendingAnalyticsUpdate[] = [];
+let processingBatch = false;
+let batchTimer: NodeJS.Timeout | null = null;
+const BATCH_SIZE = 50;
+const BATCH_TIMEOUT = 5000; // 5 seconds
+
+function scheduleBatchProcessing() {
+  if (processingBatch || batchTimer) return;
+
+  batchTimer = setTimeout(async () => {
+    batchTimer = null;
+    await processPendingUpdates();
+  }, BATCH_TIMEOUT);
+}
+
+async function processPendingUpdates() {
+  if (pendingUpdates.length === 0 || processingBatch) return;
+
+  processingBatch = true;
+  const updates = pendingUpdates.splice(0, BATCH_SIZE);
+
+  try {
+    // Group updates by type and target for efficient processing
+    const groupedUpdates = new Map<string, PendingAnalyticsUpdate[]>();
+
+    for (const update of updates) {
+      const key = `${update.eventType}-${update.targetId}`;
+      if (!groupedUpdates.has(key)) {
+        groupedUpdates.set(key, []);
+      }
+      groupedUpdates.get(key)!.push(update);
+    }
+
+    // Process each group
+    for (const [key, groupUpdates] of groupedUpdates) {
+      await processBatchGroup(groupUpdates);
+    }
+  } catch (error) {
+    console.error("Error processing analytics batch:", error);
+    // Re-add failed updates to the queue
+    pendingUpdates.unshift(...updates);
+  } finally {
+    processingBatch = false;
+
+    // Schedule next batch if there are more updates
+    if (pendingUpdates.length > 0) {
+      scheduleBatchProcessing();
+    }
+  }
+}
+
+async function processBatchGroup(updates: PendingAnalyticsUpdate[]) {
+  if (updates.length === 0) return;
+
+  const firstUpdate = updates[0];
+  const count = updates.length;
+
+  try {
+    switch (firstUpdate.eventType) {
+      case "PROFILE_VIEW":
+        await prisma.userAnalytics.upsert({
+          where: { userId: firstUpdate.targetId },
+          update: { profileViews: { increment: count } },
+          create: { userId: firstUpdate.targetId, profileViews: count },
+        });
+        break;
+
+      case "POST_VIEW":
+        await prisma.postAnalytics.upsert({
+          where: { postId: firstUpdate.targetId },
+          update: { views: { increment: count } },
+          create: { postId: firstUpdate.targetId, views: count },
+        });
+        break;
+
+      case "POST_LIKE":
+        // Update post analytics
+        await prisma.postAnalytics.upsert({
+          where: { postId: firstUpdate.targetId },
+          update: { likes: { increment: count } },
+          create: { postId: firstUpdate.targetId, likes: count },
+        });
+
+        // Update user analytics (post owner)
+        const post = await prisma.post.findUnique({
+          where: { id: firstUpdate.targetId },
+          select: { userId: true },
+        });
+
+        if (post) {
+          await prisma.userAnalytics.upsert({
+            where: { userId: post.userId },
+            update: {
+              likesReceived: { increment: count },
+              totalEngagement: { increment: count },
+            },
+            create: {
+              userId: post.userId,
+              likesReceived: count,
+              totalEngagement: count,
+            },
+          });
+        }
+        break;
+
+      case "USER_FOLLOW":
+        await prisma.userAnalytics.upsert({
+          where: { userId: firstUpdate.targetId },
+          update: { followersGained: { increment: count } },
+          create: { userId: firstUpdate.targetId, followersGained: count },
+        });
+        break;
+    }
+  } catch (error) {
+    console.error(
+      `Error processing batch for ${firstUpdate.eventType}:`,
+      error,
+    );
+  }
+}
+
 export interface UserAnalyticsData {
   profileViews: number;
-  postsCreated: number;
-  commentsCreated: number;
+  postsCount: number;
+  commentsCount: number;
   likesReceived: number;
   likesGiven: number;
   followersGained: number;
@@ -66,6 +195,8 @@ export interface EngagementInsights {
 export class AnalyticsService {
   /**
    * Track an engagement event
+   * WARNING: This should only be called on the server-side!
+   * For client-side tracking, use functions from @/lib/client-analytics
    */
   static async trackEvent(
     userId: string,
@@ -73,7 +204,16 @@ export class AnalyticsService {
     targetId: string,
     metadata?: Record<string, any>,
   ) {
+    // Prevent client-side usage
+    if (typeof window !== "undefined") {
+      throw new Error(
+        "AnalyticsService.trackEvent should not be called on the client-side. " +
+          "Use trackEvent from @/lib/client-analytics instead.",
+      );
+    }
+
     try {
+      // Store the raw event first (this is fast and essential for analytics)
       await prisma.engagementEvent.create({
         data: {
           userId,
@@ -83,8 +223,19 @@ export class AnalyticsService {
         },
       });
 
-      // Update relevant analytics
-      await this.updateAnalytics(userId, eventType, targetId);
+      // Add to batch processing queue for analytics updates (non-blocking)
+      pendingUpdates.push({ userId, eventType, targetId, metadata });
+
+      // Process immediately if batch is full, otherwise schedule for later
+      if (pendingUpdates.length >= BATCH_SIZE) {
+        // Don't await - process in background
+        processPendingUpdates().catch((error) => {
+          console.error("Error processing analytics batch:", error);
+        });
+      } else {
+        // Schedule batch processing
+        scheduleBatchProcessing();
+      }
     } catch (error) {
       console.error("Error tracking engagement event:", error);
     }
@@ -133,8 +284,8 @@ export class AnalyticsService {
 
     return {
       profileViews: analytics.profileViews,
-      postsCreated: analytics.postsCreated,
-      commentsCreated: analytics.commentsCreated,
+      postsCount: analytics.postsCount,
+      commentsCount: analytics.commentsCount,
       likesReceived: analytics.likesReceived,
       likesGiven: analytics.likesGiven,
       followersGained: analytics.followersGained,
@@ -551,8 +702,8 @@ export class AnalyticsService {
   ): Promise<UserAnalyticsData> {
     const initialData = {
       profileViews: 0,
-      postsCreated: 0,
-      commentsCreated: 0,
+      postsCount: 0,
+      commentsCount: 0,
       likesReceived: 0,
       likesGiven: 0,
       followersGained: 0,

@@ -1,3 +1,5 @@
+"use client";
+
 import { useSession } from "@/app/(main)/SessionProvider";
 import { PostData } from "@/lib/types";
 import { MoreHorizontal, Trash2, Edit, Flag, UserX } from "lucide-react";

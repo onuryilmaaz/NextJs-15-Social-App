@@ -37,12 +37,17 @@ export default function useMediaUpload() {
     },
     onUploadProgress: setUploadProgress,
     onClientUploadComplete(res) {
+      console.log("Upload completed:", res);
       setAttachments((prev) =>
         prev.map((a) => {
           const uploadResult = res.find((r) => r.name === a.file.name);
 
-          if (!uploadResult) return a;
+          if (!uploadResult) {
+            console.warn("Upload result not found for file:", a.file.name);
+            return a;
+          }
 
+          console.log("Setting mediaId:", uploadResult.serverData.mediaId);
           return {
             ...a,
             mediaId: uploadResult.serverData.mediaId,
@@ -52,11 +57,15 @@ export default function useMediaUpload() {
       );
     },
     onUploadError(e) {
+      console.error("Upload error:", e);
       setAttachments((prev) => prev.filter((a) => !a.isUploading));
       toast({
         variant: "destructive",
-        description: e.message,
+        description: e.message || "Upload failed. Please try again.",
       });
+    },
+    onUploadBegin(filename) {
+      console.log("Upload started for:", filename);
     },
   });
 

@@ -133,7 +133,7 @@ export default function UserAnalyticsDashboard({
 
         <AnalyticsCard
           title="Posts Created"
-          value={analytics.postsCreated}
+          value={analytics.postsCount}
           icon={FileText}
           description="Total content published"
         />
@@ -280,11 +280,11 @@ export default function UserAnalyticsDashboard({
             <div className="flex items-center justify-between">
               <span className="text-sm">Content Consistency</span>
               <span className="text-sm font-medium">
-                {analytics.postsCreated > 30
+                {analytics.postsCount > 30
                   ? "Very Active"
-                  : analytics.postsCreated > 10
+                  : analytics.postsCount > 10
                     ? "Active"
-                    : analytics.postsCreated > 3
+                    : analytics.postsCount > 3
                       ? "Moderate"
                       : "Low Activity"}
               </span>
@@ -306,7 +306,7 @@ export default function UserAnalyticsDashboard({
               </div>
             )}
 
-            {analytics.postsCreated < 10 && (
+            {analytics.postsCount < 10 && (
               <div className="rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
                 <div className="font-medium text-green-900 dark:text-green-200">
                   Post More Content

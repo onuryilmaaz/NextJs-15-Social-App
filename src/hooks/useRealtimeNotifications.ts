@@ -29,9 +29,15 @@ export function useRealtimeNotifications(
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const isConnectingRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const showNotificationToast = useCallback(
     (notification: NotificationData) => {
@@ -65,8 +71,14 @@ export function useRealtimeNotifications(
     [toast],
   );
 
-  const handleNewNotification = useCallback(
-    (notification: NotificationData) => {
+  // Stable references for handlers
+  const handleNewNotificationRef =
+    useRef<(notification: NotificationData) => void>();
+  const handleUnreadCountUpdateRef = useRef<(count: number) => void>();
+
+  // Update refs when dependencies change
+  useEffect(() => {
+    handleNewNotificationRef.current = (notification: NotificationData) => {
       // Update notifications list
       queryClient.setQueryData(["notifications"], (old: any) => {
         if (!old) return old;
@@ -93,24 +105,28 @@ export function useRealtimeNotifications(
 
       // Call custom handler
       onNotification?.(notification);
-    },
-    [queryClient, showToasts, onNotification, showNotificationToast],
-  );
+    };
+  }, [queryClient, showToasts, onNotification, showNotificationToast]);
 
-  const handleUnreadCountUpdate = useCallback(
-    (count: number) => {
+  useEffect(() => {
+    handleUnreadCountUpdateRef.current = (count: number) => {
       queryClient.setQueryData(["unread-notification-count"], {
         unreadCount: count,
       });
-    },
-    [queryClient],
-  );
+    };
+  }, [queryClient]);
 
   const connect = useCallback(() => {
-    if (!enabled || eventSourceRef.current?.readyState === EventSource.OPEN) {
+    // Prevent multiple simultaneous connections
+    if (
+      !enabled ||
+      eventSourceRef.current?.readyState === EventSource.OPEN ||
+      isConnectingRef.current
+    ) {
       return;
     }
 
+    isConnectingRef.current = true;
     setConnectionStatus("connecting");
 
     try {
@@ -120,7 +136,11 @@ export function useRealtimeNotifications(
       eventSource.onopen = () => {
         setConnectionStatus("connected");
         reconnectAttempts.current = 0;
-        console.log("Real-time notifications connected");
+        isConnectingRef.current = false;
+        // Only log in development
+        if (process.env.NODE_ENV === "development") {
+          console.log("Real-time notifications connected");
+        }
       };
 
       eventSource.onmessage = (event) => {
@@ -129,7 +149,10 @@ export function useRealtimeNotifications(
 
           switch (eventData.type) {
             case "connected":
-              console.log("SSE connection established");
+              // Only log in development
+              if (process.env.NODE_ENV === "development") {
+                console.log("SSE connection established");
+              }
               break;
 
             case "heartbeat":
@@ -137,14 +160,17 @@ export function useRealtimeNotifications(
               break;
 
             case "notification":
-              if (eventData.data) {
-                handleNewNotification(eventData.data);
+              if (eventData.data && handleNewNotificationRef.current) {
+                handleNewNotificationRef.current(eventData.data);
               }
               break;
 
             case "unread_count":
-              if (typeof eventData.count === "number") {
-                handleUnreadCountUpdate(eventData.count);
+              if (
+                typeof eventData.count === "number" &&
+                handleUnreadCountUpdateRef.current
+              ) {
+                handleUnreadCountUpdateRef.current(eventData.count);
               }
               break;
           }
@@ -155,6 +181,7 @@ export function useRealtimeNotifications(
 
       eventSource.onerror = () => {
         setConnectionStatus("disconnected");
+        isConnectingRef.current = false;
         eventSource.close();
 
         // Attempt to reconnect with exponential backoff
@@ -179,8 +206,9 @@ export function useRealtimeNotifications(
     } catch (error) {
       console.error("Error creating EventSource:", error);
       setConnectionStatus("disconnected");
+      isConnectingRef.current = false;
     }
-  }, [enabled, handleNewNotification, handleUnreadCountUpdate]);
+  }, [enabled]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -193,12 +221,13 @@ export function useRealtimeNotifications(
       eventSourceRef.current = null;
     }
 
+    isConnectingRef.current = false;
     setConnectionStatus("disconnected");
   }, []);
 
   // Connect on mount and when enabled changes
   useEffect(() => {
-    if (enabled) {
+    if (enabled && mounted) {
       connect();
     } else {
       disconnect();
@@ -207,14 +236,7 @@ export function useRealtimeNotifications(
     return () => {
       disconnect();
     };
-  }, [enabled, connect, disconnect]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+  }, [enabled, mounted]); // Depend on both enabled and mounted
 
   // Reconnect when browser comes back online
   useEffect(() => {

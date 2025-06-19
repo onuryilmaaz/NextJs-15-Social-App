@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -64,6 +65,9 @@ export default function EditPostDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Post</DialogTitle>
+          <DialogDescription>
+            Make changes to your post content. Click save when you're done.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Form {...form}>

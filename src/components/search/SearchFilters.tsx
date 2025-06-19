@@ -13,6 +13,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -84,6 +85,9 @@ export default function SearchFilters({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Search Filters</DialogTitle>
+          <DialogDescription>
+            Refine your search results with advanced filters.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

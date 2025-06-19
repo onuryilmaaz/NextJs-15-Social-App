@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# Block auth pages
+Disallow: /login
+Disallow: /signup
+Disallow: /admin/
+
+# Block API routes from indexing
+Disallow: /api/
+
+# Allow specific public API routes
+Allow: /api/og
+
+# Block search pages with query parameters
+Disallow: /search?*
+
+# Block user management pages
+Disallow: /settings/
+Disallow: /messages/
+
+# Allow user profiles and public content
+Allow: /users/
+Allow: /hashtag/
+Allow: /posts/
+
+# Sitemap location
+Sitemap: https://echoverse.app/sitemap.xml
+
+# Crawl delay to be respectful
+Crawl-delay: 1 

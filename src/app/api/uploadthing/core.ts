@@ -26,7 +26,7 @@ export const fileRouter = {
         await new UTApi().deleteFiles(key);
       }
 
-      const newAvatarUrl = file.ufsUrl;
+      const newAvatarUrl = file.url;
 
       await Promise.all([
         prisma.user.update({
@@ -57,14 +57,25 @@ export const fileRouter = {
       return {};
     })
     .onUploadComplete(async ({ file }) => {
-      const media = await prisma.media.create({
-        data: {
-          url: file.ufsUrl,
-          type: file.type.startsWith("image") ? "IMAGE" : "VIDEO",
-        },
+      console.log("Upload completed in server:", {
+        url: file.url,
+        type: file.type,
       });
 
-      return { mediaId: media.id };
+      try {
+        const media = await prisma.mediaAttachment.create({
+          data: {
+            url: file.url,
+            type: file.type.startsWith("image") ? "IMAGE" : "VIDEO",
+          },
+        });
+
+        console.log("Media created in database:", media.id);
+        return { mediaId: media.id };
+      } catch (error) {
+        console.error("Error creating media in database:", error);
+        throw error;
+      }
     }),
 } satisfies FileRouter;
 

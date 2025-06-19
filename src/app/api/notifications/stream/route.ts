@@ -15,9 +15,13 @@ export async function GET() {
         connections.set(user.id, controller);
 
         // Send initial connection message
-        controller.enqueue(
-          `data: ${JSON.stringify({ type: "connected", timestamp: Date.now() })}\n\n`,
-        );
+        try {
+          controller.enqueue(
+            `data: ${JSON.stringify({ type: "connected", timestamp: Date.now() })}\n\n`,
+          );
+        } catch (error) {
+          console.error("Error sending initial connection message:", error);
+        }
 
         // Send heartbeat every 30 seconds to keep connection alive
         const heartbeat = setInterval(() => {
@@ -26,19 +30,20 @@ export async function GET() {
               `data: ${JSON.stringify({ type: "heartbeat", timestamp: Date.now() })}\n\n`,
             );
           } catch (error) {
+            console.error("Error sending heartbeat:", error);
             clearInterval(heartbeat);
             connections.delete(user.id);
           }
         }, 30000);
 
-        // Cleanup on connection close
+        // Cleanup function
         const cleanup = () => {
           clearInterval(heartbeat);
           connections.delete(user.id);
         };
 
-        // Handle connection cleanup
-        // Note: controller doesn't have closed property in this context
+        // Store cleanup function for potential use
+        // Note: In a real implementation, you might want to handle connection close events
       },
       cancel() {
         connections.delete(user.id);

@@ -28,8 +28,15 @@ export default function LiveUserStatus({
 }: LiveUserStatusProps) {
   const [presence, setPresence] = useState<UserPresence | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const eventSource = new EventSource(`/api/realtime/presence/${userId}`);
 
     eventSource.onopen = () => {
@@ -56,7 +63,12 @@ export default function LiveUserStatus({
       eventSource.close();
       setIsConnected(false);
     };
-  }, [userId]);
+  }, [userId, mounted]);
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -186,8 +198,15 @@ interface OnlineUsersProps {
 export function OnlineUsers({ className, maxUsers = 10 }: OnlineUsersProps) {
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
   const [totalOnline, setTotalOnline] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const eventSource = new EventSource("/api/realtime/presence/online");
 
     eventSource.onmessage = (event) => {
@@ -206,36 +225,49 @@ export function OnlineUsers({ className, maxUsers = 10 }: OnlineUsersProps) {
     return () => {
       eventSource.close();
     };
-  }, [maxUsers]);
+  }, [maxUsers, mounted]);
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div
+      className={cn("space-y-3 rounded-2xl bg-card p-4 shadow-sm", className)}
+    >
       <div className="flex items-center gap-2">
-        <Users className="h-4 w-4 text-green-500" />
-        <span className="text-sm font-medium">{totalOnline} Users Online</span>
+        <Users className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold">Online Now</h3>
+        <Badge variant="secondary" className="ml-auto">
+          {totalOnline}
+        </Badge>
       </div>
 
-      <div className="space-y-2">
-        {onlineUsers.map((user) => (
-          <div key={user.userId} className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-sm text-muted-foreground">
-              User {user.userId.slice(0, 8)}...
-            </span>
-            {user.currentActivity && (
-              <span className="text-xs italic text-muted-foreground">
-                {user.currentActivity}
+      {onlineUsers.length > 0 ? (
+        <div className="space-y-2">
+          {onlineUsers.map((user) => (
+            <div key={user.userId} className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="text-sm text-muted-foreground">
+                User {user.userId.slice(0, 8)}
               </span>
-            )}
-          </div>
-        ))}
-
-        {totalOnline > maxUsers && (
-          <div className="text-xs text-muted-foreground">
-            +{totalOnline - maxUsers} more users online
-          </div>
-        )}
-      </div>
+              {user.currentActivity && (
+                <span className="text-xs text-muted-foreground">
+                  • {user.currentActivity}
+                </span>
+              )}
+            </div>
+          ))}
+          {totalOnline > maxUsers && (
+            <p className="text-xs text-muted-foreground">
+              +{totalOnline - maxUsers} more online
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No users online</p>
+      )}
     </div>
   );
 }

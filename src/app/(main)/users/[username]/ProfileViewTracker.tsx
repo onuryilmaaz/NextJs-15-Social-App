@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "@/app/(main)/SessionProvider";
-import { trackEvent } from "@/lib/analytics";
+import { trackProfileView } from "@/lib/client-analytics";
 import { useEffect } from "react";
 
 interface ProfileViewTrackerProps {
@@ -16,7 +16,7 @@ export default function ProfileViewTracker({
   useEffect(() => {
     // Only track if viewing someone else's profile
     if (user.id !== profileUserId) {
-      trackEvent(user.id, "PROFILE_VIEW", profileUserId);
+      trackProfileView(profileUserId, { viewedBy: user.id });
     }
   }, [user.id, profileUserId]);
 
